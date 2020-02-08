@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// TODO: replace all log.Fatal with something more appropriate
+
 type Service struct {
 	Service string
 	Load    string
@@ -23,7 +25,7 @@ type PostCommand struct {
 	Service string
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
+func systemdserve(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.Error(w, "404 not found.", http.StatusNotFound)
 		return
@@ -31,7 +33,10 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		services := getSystemServices()
+		services, err := getSystemServices()
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		serviceJSON, err := json.Marshal(services)
 		if err != nil {
@@ -60,31 +65,35 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func ExecSystemCtl(postCmd PostCommand) (string, error) {
+func ExecSystemCtl(postCmd PostCommand) ([]byte, error) {
 
 	command := fmt.Sprintf("systemctl %s %s", postCmd.Command, postCmd.Service)
 	out, err := exec.Command("sh", "-c", command).Output()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return string(out), err
+	return out, err
 }
 
-func getSystemServices() []Service {
+func getSystemServices() ([]Service, error) {
 	out, err := exec.Command("sh", "-c", "systemctl --type=service --all").Output()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// each service should be in new line
 	lines := strings.Split(string(out), "\n")
-	//fmt.Printf("%s\n", out)
 
+	// first line is header
 	var header string
 	if len(lines) > 0 {
 		header = lines[0]
 		lines = lines[1:]
+	} else {
+		return nil, fmt.Errorf("error listing system services - output len is 0")
 	}
 
+	// find where list of services end (first empty line)
 	lastLine := 0
 	for i := len(lines); i > 0; i-- {
 		if len(lines[i-1]) == 0 {
@@ -92,6 +101,8 @@ func getSystemServices() []Service {
 		}
 	}
 
+	// fix: indexes are not correct when LOAD is 'not-found'
+	// also it would be good idea to check if any of indexes end up with -1 -> index not found
 	servicesInd := strings.Index(header, "UNIT")     // UNIT LOAD ACTIVE SUB DESCRIPTION
 	unitInd := strings.Index(header, "LOAD")         // UNIT LOAD ACTIVE SUB DESCRIPTION
 	activeInd := strings.Index(header, "ACTIVE")     // UNIT LOAD ACTIVE SUB DESCRIPTION
@@ -122,30 +133,16 @@ func getSystemServices() []Service {
 		s.Desc = strings.TrimSpace(s.Desc)
 
 		services = append(services, s)
-
 	}
 
-	return services
+	return services, nil
 }
 
 func main() {
 
-	http.HandleFunc("/", hello)
+	http.HandleFunc("/", systemdserve)
 
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
-
-	/*
-		for _, s := range services {
-			//fmt.Printf("SER %s, LOAD %s, ACT %s, SUB %s, DESC %s", s.Service, s.Load, s.Active, s.Sub, s.Desc)
-			fmt.Printf("SER %s", s.Service)
-			fmt.Println()
-			fmt.Printf("LOAD %10s ", s.Load)
-			fmt.Printf("ACT %10s ", s.Active)
-			fmt.Printf("SUB %10s ", s.Sub)
-			fmt.Printf("DESC %10s", s.Desc)
-			fmt.Println()
-			fmt.Println()
-		}*/
 }
