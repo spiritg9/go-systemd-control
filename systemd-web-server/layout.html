@@ -30,6 +30,7 @@ tr:nth-child(even) {
     <th>Active</th>
     <th>Sub</th>
     <th>Description</th>
+    <th>Action</th>
   </tr>
  
     {{range .Services}}
@@ -39,8 +40,19 @@ tr:nth-child(even) {
         <td>{{.Active}}</td>
         <td>{{.Sub}}</td>
         <td>{{.Desc}}</td>
+        <td>
+        <form action="/action" method="post" >
+            <select id="action" name="action">
+            <option value="start">Start</option>
+            <option value="stop">Stop</option>
+            <option value="restart">Restart</option>
+            <option value="status">Status</option>
+            <input type="submit" value="Submit">
+            <input id="service" name="service" type="hidden" value="{{.Service}}">
+        </form> </td>
     </tr>
     {{end}}
+
  
 </table>
 
