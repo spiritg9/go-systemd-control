@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+
+<h2>Hosts</h2>
+
+<table>
+  <tr>
+    <th>Hostname</th>
+    <th>AppName</th>
+    <th>Version</th>
+    <th>IP</th>
+    <th>Port</th>
+    <th>List services</th>
+  </tr>
+ 
+    {{range .Hosts}}
+    <tr>
+        <td>{{.Hostname}}</td>
+        <td>{{.AppName}}</td>
+        <td>{{.Version}}</td>
+        <td>{{.IP}}</td>
+        <td>{{.Port}}</td>
+        <td>
+        <form action="/list" method="get" >
+            <input id="host" name="host" type="hidden" value="{{.IP}}">
+            <input id="port" name="port" type="hidden" value="{{.Port}}">
+            <input type="submit" value="GO">
+        </form> </td>
+    </tr>
+    {{end}}
+
+ 
+</table>
+
+</body>
+</html>

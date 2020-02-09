@@ -2,13 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 )
+
+const appname = "go-systemd-client"
 
 type Services struct {
 	Services []Service
@@ -27,8 +31,47 @@ type PostCommand struct {
 	Service string
 }
 
-func systemdserve(w http.ResponseWriter, r *http.Request) {
+type Host struct {
+	Hostname string
+	AppName  string
+	Version  string
+}
+
+func host(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
+		http.Error(w, "404 not found.", http.StatusNotFound)
+		return
+	}
+
+	switch r.Method {
+	case "GET":
+		hostname, err := os.Hostname()
+		if err != nil {
+			log.Printf("Could not retrive hostname; %v", err)
+		}
+
+		h := Host{
+			Hostname: hostname,
+			AppName:  appname,
+			Version:  "alpha",
+		}
+
+		hostJSON, err := json.Marshal(h)
+		if err != nil {
+			// if we can't marshal it, we can't send it and server won't find it so no use in running
+			log.Fatal("Could not marshal hostname; s", err)
+		}
+
+		fmt.Fprintf(w, "%s\n", hostJSON)
+	default:
+		fmt.Fprintf(w, "Sorry, only GET method is supported.")
+		return
+	}
+
+}
+
+func systemdserve(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/services" {
 		http.Error(w, "404 not found.", http.StatusNotFound)
 		return
 	}
@@ -174,10 +217,16 @@ func getSystemServices() ([]Service, error) {
 }
 
 func main() {
+	listenIP := flag.String("listen-ip", "", "for 0.0.0.0 leave empty")
+	listenPort := flag.String("listen-port", "8081", "8081")
 
-	http.HandleFunc("/", systemdserve)
+	flag.Parse()
 
-	if err := http.ListenAndServe(":8081", nil); err != nil {
+	http.HandleFunc("/", host)
+	http.HandleFunc("/services", systemdserve)
+
+	listenAddr := fmt.Sprintf("%s:%s", *listenIP, *listenPort)
+	if err := http.ListenAndServe(listenAddr, nil); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -21,7 +21,7 @@ tr:nth-child(even) {
 </head>
 <body>
 
-<h2>Systemd Services</h2>
+<h2>Services</h2>
 
 <table>
   <tr>
@@ -47,8 +47,8 @@ tr:nth-child(even) {
             <option value="stop">Stop</option>
             <option value="restart">Restart</option>
             <option value="status">Status</option>
-            <input type="submit" value="Submit">
             <input id="service" name="service" type="hidden" value="{{.Service}}">
+            <input type="submit" value="Submit">
         </form> </td>
     </tr>
     {{end}}
