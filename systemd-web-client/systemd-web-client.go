@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-// TODO: replace all log.Fatal with something more appropriate
-
 type Services struct {
 	Services []Service
 }
@@ -39,12 +37,18 @@ func systemdserve(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		services, err := getSystemServices()
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Could not read system services; %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Could not read system services; %v", err)
+			return
 		}
 
 		serviceJSON, err := json.Marshal(services)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Could not marshal systm services; %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Could not marshal systm services; %v", err)
+			return
 		}
 
 		fmt.Fprintf(w, "%s", serviceJSON)
@@ -53,18 +57,26 @@ func systemdserve(w http.ResponseWriter, r *http.Request) {
 		var postCmd = PostCommand{}
 		err = json.Unmarshal(b, &postCmd)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Could not unmarshal POST request JSON; %v", err)
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "Could not unmarshal POST request JSON; %v", err)
+			return
 		}
 
 		out, err := ExecSystemCtl(postCmd)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("Could not execute system command; %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "Could not execute system command; %v", err)
+			return
 		}
 
 		fmt.Fprintf(w, "%s\n", out)
 
 	default:
+		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(w, "Sorry, only GET and POST methods are supported.")
+		return
 	}
 
 }
@@ -72,17 +84,36 @@ func systemdserve(w http.ResponseWriter, r *http.Request) {
 func ExecSystemCtl(postCmd PostCommand) ([]byte, error) {
 
 	command := fmt.Sprintf("systemctl %s %s", postCmd.Command, postCmd.Service)
-	out, err := exec.Command("sh", "-c", command).Output()
-	if err != nil {
-		log.Fatal(err)
+	output, err := exec.Command("sh", "-c", command).Output()
+	if eerror, ok := err.(*exec.ExitError); ok {
+		if postCmd.Command == "status" {
+			/*
+				As we don't want to dead services return error, we check if error is due to status code being 1, 2, 3 or 4
+
+				0 program is running or service is OK
+				1 program is dead and /var/run pid file exists
+				2 program is dead and /var/lock lock file exists
+				3 program is not running
+				4 program or service status is unknown
+				5-99  reserved for future LSB use
+				100-149   reserved for distribution use
+				150-199   reserved for application use
+				200-254   reserved
+			*/
+			exitCode := eerror.ExitCode()
+			if exitCode >= 0 && exitCode <= 4 {
+				return output, nil
+			}
+		}
 	}
-	return out, err
+	return output, err
+
 }
 
 func getSystemServices() ([]Service, error) {
 	out, err := exec.Command("sh", "-c", "systemctl --type=service --all").Output()
 	if err != nil {
-		log.Fatal(err)
+		return []Service{}, err
 	}
 
 	// each service should be in new line
