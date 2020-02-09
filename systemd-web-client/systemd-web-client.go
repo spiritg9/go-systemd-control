@@ -102,7 +102,7 @@ func systemdserve(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Could not unmarshal POST request JSON; %v", err)
 			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, "Could not unmarshal POST request JSON; %v", err)
+			fmt.Fprintf(w, "Could not unmarshal POST request JSON; %v; %s", err, b)
 			return
 		}
 

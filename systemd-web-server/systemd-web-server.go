@@ -25,6 +25,8 @@ type Service struct {
 	Active  string
 	Sub     string
 	Desc    string
+	Host    string
+	Port    string
 }
 
 type PostCommand struct {
@@ -76,13 +78,16 @@ func systemdaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	host := "localhost"
-	port := "8081"
-
 	switch r.Method {
 	case "POST":
+		host := r.PostFormValue("host")
+		port := r.PostFormValue("port")
 		action := r.PostFormValue("action")
 		service := r.PostFormValue("service")
+		fmt.Println(host)
+		fmt.Println(port)
+		fmt.Println(action)
+		fmt.Println(service)
 		fmt.Fprintf(w, "%s\n", action)
 		fmt.Fprintf(w, "%s\n", service)
 
@@ -181,6 +186,11 @@ func systemdlist(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ss := Services{}
+		for i := range services {
+			services[i].Host = host
+			services[i].Port = port
+		}
+
 		ss.Services = services
 		tmpl := template.Must(template.ParseFiles("layout.html"))
 		err = tmpl.Execute(w, ss)
@@ -197,7 +207,6 @@ func systemdlist(w http.ResponseWriter, r *http.Request) {
 
 func searchNewHosts(cidr, port string) {
 	var ips = getIPs(cidr)
-	fmt.Println(ips)
 	for {
 		for _, ip := range ips {
 			go pingServer(ip, port)
@@ -209,13 +218,11 @@ func searchNewHosts(cidr, port string) {
 }
 
 func pingServer(ip, port string) {
-	log.Printf("pinging %s:%s", ip, port)
 	client := http.Client{
 		Timeout: 5 * time.Second,
 	}
 	resp, err := client.Get(fmt.Sprintf("http://%s:%s", ip, port))
 	if err != nil {
-		log.Printf("Could not get response from %s:%s", ip, port)
 		return
 	}
 
