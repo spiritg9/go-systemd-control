@@ -195,20 +195,20 @@ func getSystemServices() ([]Service, error) {
 		}
 
 		var s Service
-		s.Service = l[servicesInd:unitInd]
-		s.Service = strings.TrimSpace(s.Service)
+		temp := []rune(l)[servicesInd:unitInd]
+		s.Service = strings.TrimSpace(string(temp))
 
-		s.Load = l[unitInd:activeInd]
-		s.Load = strings.TrimSpace(s.Load)
+		temp = []rune(l)[unitInd:activeInd]
+		s.Load = strings.TrimSpace(string(temp))
 
-		s.Active = l[activeInd:subInd]
-		s.Active = strings.TrimSpace(s.Active)
+		temp = []rune(l)[activeInd:subInd]
+		s.Active = strings.TrimSpace(string(temp))
 
-		s.Sub = l[subInd:descpInd]
-		s.Sub = strings.TrimSpace(s.Sub)
+		temp = []rune(l)[subInd:descpInd]
+		s.Sub = strings.TrimSpace(string(temp))
 
-		s.Desc = l[descpInd:]
-		s.Desc = strings.TrimSpace(s.Desc)
+		temp = []rune(l)[descpInd:]
+		s.Desc = strings.TrimSpace(string(temp))
 
 		services = append(services, s)
 	}
