@@ -3,13 +3,10 @@
 This project allows user to control sytemd services remotely. It contains go systemd server and go systemd client.
 
 ![Hosts](/screenshots/hosts.png)
-Format: ![Alt Text](url)
 
 ![Services](/screenshots/services.png)
-Format: ![Alt Text](url)
 
 ![Service Status](/screenshots/status.png)
-Format: ![Alt Text](url)
 
 
 ## GO SYSTEMD CLIENT
