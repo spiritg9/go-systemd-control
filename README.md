@@ -2,10 +2,21 @@
 
 This project allows user to control sytemd services remotely. It contains go systemd server and go systemd client.
 
+![Hosts](/screenshots/hosts.png)
+Format: ![Alt Text](url)
+
+![Services](/screenshots/services.png)
+Format: ![Alt Text](url)
+
+![Service Status](/screenshots/status.png)
+Format: ![Alt Text](url)
+
+
 ## GO SYSTEMD CLIENT
 _________________________________
 
 Client is machine with REST API that sits on GNU/Linux machine with systemd and serves list of all systemd processes. It can also start/stop/restart/send status of the service on demand.
+To be able to exeute start/stop/restart, it should be ran with elevated privilages.
 
   * listen-ip string - (default "")
     * IP where server will listen for client. Leave empty to listen all IP addresses.
