@@ -15,6 +15,8 @@ _________________________________
 Client is machine with REST API that sits on GNU/Linux machine with systemd and serves list of all systemd processes. It can also start/stop/restart/send status of the service on demand.
 To be able to exeute start/stop/restart, it should be ran with elevated privilages.
 
+Command line arguments are:
+
   * listen-ip string - (default "")
     * IP where server will listen for client. Leave empty to listen all IP addresses.
   * listen-port string - (default "8081")
